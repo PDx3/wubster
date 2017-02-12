@@ -12,15 +12,11 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 
 app.get('/', function(request, response) {
-	console.log(request);
   response.render('pages/index')
 });
 
-app.get('/cool', function(request, response) {
-  response.send(cool());
-});
-
 io.on('connection', function(socket){
+	io.emit('broadcast',{ vId: 'qycqF1CWcXg'});
   socket.on('chat message', function(msg){
      io.emit('chat message', msg);
   });
