@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+    <head>
+        <link href="stylesheets/portfolio-item.css" rel="stylesheet">
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+        <script>
+            // 2. This code loads the IFrame Player API code asynchronously.
+            var tag = document.createElement('script');
+
+            tag.src = "https://www.youtube.com/iframe_api";
+            var firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+            var player;
+            var videoId = null;
+
+            var socket = io();
+
+            socket.on('broadcast', function (msg) {
+                if (msg) {
+                    setTimeout(function () {
+                        videoId = msg['vId'];
+                        console.log(videoId);
+                        player.loadVideoById(videoId,
+                                0,
+                                'default');
+                    }, 1000);
+
+
+
+                }
+            });
+
+            // 3. This function creates an <iframe> (and YouTube player)
+            //    after the API code downloads.
+            function onYouTubeIframeAPIReady() {
+                player = new YT.Player('player', {
+                    height: '500',
+                    width: '750',
+                    videoId: videoId,
+                    playerVars: {
+                        'controls': 0,
+                        'modestbranding': 1,
+                        'rel': 0,
+                        'showinfo': 0,
+                        'iv_load_policy': 3,
+                        'fs': 0,
+                        'enablejsapi': 1, //required?
+                        'disablekb': 1
+                    },
+                    events: {
+                        'onReady': onPlayerReady
+                    }
+                });
+            }
+
+            function onPlayerReady(event) {
+                event.target.setVolume(15);
+            }
+
+            socket.on('chat message', function (data) {
+                console.log(data);
+                var messageListItem = '<li>' + '<span class="chat-message-timestamp">(' + data['timestamp'] + ')</span> ' + data['message'] + '</li>';
+                $('#chat-container-messages').append(messageListItem);
+            });
+
+            function reloadPlayer() {
+                console.log('RELOADING WITH ID: ' + videoId);
+                player.loadVideoById(videoId,
+                        0,
+                        'default');
+            }
+
+        </script>
+        <title>Wubbalubbadubdub</title>
+        <style>
+            #chat-container{
+                height: 457px; background: rgba(126, 171, 118, 0.54); margin-bottom: 10px;
+            }
+            #chat-container-messages { 
+                list-style-type: none; margin: 0; padding: 0; 
+            }
+            #chat-container-messages li { 
+                padding: 5px 10px; 
+                border-bottom: 1px solid #fff;
+            }
+/*            #chat-container-messages li:nth-child(even) { 
+                background: #ccc; 
+            }
+            #chat-container-messages li:nth-child(odd) { 
+                background: #eee; 
+            }*/
+            .chat-message-timestamp{
+                font-size: 10px;
+            }
+        </style>
+        <% include ../partials/header.ejs %>
+    </head>
+    <body>
+        <!-- Navigation -->
+        <% include ../partials/nav.ejs %>
+
+        <!-- Page Content -->
+        <div class="container">
+
+            <!-- Portfolio Item Heading -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-header">Room
+                        <small><%= roomId %></small>
+                    </h1>
+                </div>
+            </div>
+            <!-- /.row -->
+
+            <!-- Portfolio Item Row -->
+            <div class="row">
+
+                <div class="col-md-8">
+                    <div id="player"></div>
+                </div>
+
+                <div class="col-md-4" style="height: 500px;">
+                    <div id="chat-container">
+                        <ul id="chat-container-messages" style="width: 100%;">
+
+                        </ul>
+                    </div>
+                    <div class="input-group margin-bottom-sm">
+                        <input id="chat-message-input" class="form-control" type="text" placeholder="Enter message to chat">
+                        <span id="chat-btn-enter" class="input-group-addon"><i class="fa fa-commenting-o fa-fw"></i></span>
+                    </div>
+                </div>
+
+            </div>
+            <!-- /.row -->
+
+            <hr>
+
+            <!-- Footer -->
+            <% include ../partials/footer.ejs %>
+
+        </div>
+        <!-- /.container -->
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $('#chat-message-input').keypress(function (e) {
+                    var key = e.which;
+                    if (key === 13) {
+                        sendChatMessage();
+                    }
+                });
+                $('#chat-btn-enter').click(function () {
+                    sendChatMessage();
+                });
+
+                function sendChatMessage() {
+                    console.log('Chat message => ');
+                    var chatMessage = $('#chat-message-input').val();
+                    if (chatMessage) {
+                        console.log($('#chat-message-input').val());
+                        socket.emit('chat message', $('#chat-message-input').val());
+                    } else {
+                        console.log('Message is empty');
+                    }
+
+                    $('#chat-message-input').val('');
+                }
+            });
+        </script>
+    </body>
+</html>
